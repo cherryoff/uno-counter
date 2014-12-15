@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html ng-app="counterApp" lang="ru">
+    <head>
+        <meta charset="utf-8">
+        <meta name="robots" content="index, follow">
+        <meta name="keywords" content="uno, counter, uno counter, уно, уно считать очки, уно калькулятор">
+        <meta name="description" content="Калькулятор очков при игре в UNO">
+        <meta name="author"	content="Nick Wishnyakov - http://wishnyakov.ru/">
+        <meta name="theme-color" content="#FF5722">
+        <link rel="icon" href="favicon.ico">
+        <link rel="apple-touch-icon" href="apple-touch-icon.png">
+        <link rel="icon" sizes="192x192" href="apple-touch-icon.png">
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+        <title>UNO Счетчик</title>
+        <style>
+            .card {
+                padding-bottom: 20px;
+            }
+            .card p {
+                font-size: 18px;
+            }
+        </style>
+    </head>
+    <body ng-controller="scoreController as scoreCtrl">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-2 text-center">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h2>Ход {{scoreCtrl.step+1}}</h2>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <button class="btn btn-link" ng-click="scoreCtrl.clearGame()">Новая игра</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Имя игрока</th>
+                                <th>Количество очков</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="player in scoreCtrl.players | orderBy:'score':true" ng-class="{success: player.score >= scoreCtrl.winScore}">
+                                <td>{{player.name}}</td>
+                                <td>{{player.score}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-md-5">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                        <tr>
+                            <th>Номер раунда</th>
+                            <th>Имя победителя</th>
+                            <th>Количество очков</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr ng-repeat="step in scoreCtrl.steps">
+                            <td>{{$index+1}}</td>
+                            <td>{{scoreCtrl.players[step.winnerId].name}}</td>
+                            <td>{{step.score}}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <div class="form-group">
+                        <button class="btn btn-success" ng-click="scoreCtrl.addWinner()"><span class="glyphicon glyphicon-plus"></span> Добавить победу</button>
+                        <button class="btn btn-danger" ng-click="scoreCtrl.removeLastWin()" ng-show="scoreCtrl.step > 0"><span class="glyphicon glyphicon-minus"></span> Удалить последний ход</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div ng-controller="playerController as playerCtrl" class="modal fade in" ng-style="playerCtrl.style">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title"><span class="glyphicon glyphicon-user"></span> Добавьте игроков</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form class="form-horizontal" role="form">
+                            <div class="form-group" ng-repeat="player in playerCtrl.players">
+                                <label for="name{{$index}}" class="col-sm-4 control-label">Игрок {{$index+1}}</label>
+                                <div class="col-sm-4">
+                                    <input ng-model="player.name" type="text" class="form-control" id="name{{$index}}" placeholder="Имя игрока">
+                                </div>
+                                <div class="col-sm-4">
+                                    <button class="btn btn-danger" ng-click="playerCtrl.removePlayer($index)" ng-disabled="playerCtrl.players.length < 3"><span class="glyphicon glyphicon-trash"></span></button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-sm-4 col-sm-offset-4">
+                                    <button class="btn btn-link" ng-click="playerCtrl.addPlayer()"><span class="glyphicon glyphicon-plus"></span> добавить игрока</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" ng-click="playerCtrl.savePlayers()"><span class="glyphicon glyphicon-floppy-disk"></span> Сохранить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div ng-controller="winnerController as winnerCtrl" class="modal fade in" ng-style="winnerCtrl.style">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title"><span class="glyphicon glyphicon-tower"></span> Регистрация победы</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-xs-12 text-center">
+                                <div class="page-header">
+                                    <h1><small>Общий счет:</small> {{winnerCtrl.step_score}}</h1>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-12 text-center">
+                                <div class="form-group">
+                                    <label for="winner">Победитель</label>
+                                    <select id="winner" class="form-control" ng-model="winnerCtrl.user_id" ng-options="player.id as player.name for player in winnerCtrl.players"></select>                              </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-4 text-center card" ng-repeat="card in winnerCtrl.cards">
+                                <p><b>{{card.name}}</b></p>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-default" ng-click="winnerCtrl.addCard($index)"><span class="glyphicon glyphicon-arrow-up"></span></button>
+                                    <button type="button" class="btn btn-default">{{card.count}}</button>
+                                    <button type="button" class="btn btn-default" ng-click="winnerCtrl.removeCard($index)" ng-disabled="card.count < 1"><span class="glyphicon glyphicon-arrow-down"></span></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-success" ng-click="winnerCtrl.saveWinner()"><span class="glyphicon glyphicon-floppy-disk"></span> Сохранить</button>
+                        <button type="button" class="btn btn-default" ng-click="winnerCtrl.hideForm()">Отменить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.0/angular.min.js"></script>
+        <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+        <script src="script.js"></script>
+    </body>
+</html>
