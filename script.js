@@ -90,6 +90,7 @@
         this.players = [];
         this.steps = [];
         var step = 0;
+        this.winScore = 500;
 
         $rootScope.$on('playersBeSave', function(){
             self.updateInfos();
