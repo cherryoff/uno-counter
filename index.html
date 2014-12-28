@@ -1,21 +1,356 @@
 <!doctype html>
-<html ng-app>
-  <head>
-    <title>UNO Счетчик</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
-  </head>
-  <body ng-controller="scoreController as scoreCtrl">
-    <div class="container">
-      <div class="col-md-4">
-        <div class="row">
-          <h2>Ход: {{scoreCtrl.step}}</h2>
+<html ng-app="counterApp">
+    <head>
+        <title>UNO Счетчик</title>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+    </head>
+    <body ng-controller="scoreController as scoreCtrl">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-2 text-center">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h2>Ход: {{scoreCtrl.step}}</h2>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <button class="btn btn-link" ng-click="scoreCtrl.clearGame()">Новая игра</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Имя игрока</th>
+                                <th>Количество очков</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr ng-repeat="player in scoreCtrl.players">
+                                <td>{{player.name}}</td>
+                                <td>{{scoreCtrl.scores[$index]}}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-md-5">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                        <tr>
+                            <th>Номер раунда</th>
+                            <th>Имя победителя</th>
+                            <th>Количество очков</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr ng-repeat="step in scoreCtrl.steps">
+                            <td>{{$index+1}}</td>
+                            <td>{{scoreCtrl.players[step.winnerId].name}}</td>
+                            <td>{{step.score}}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                    <div class="form-group">
+                        <button class="btn btn-success" ng-click="scoreCtrl.addWinner()">+ Добавить победу</button>
+                        <button class="btn btn-danger" ng-click="scoreCtrl.removeLastWin()" ng-show="scoreCtrl.step > 0">Удалить последний ход</button>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="row">
-          <button class="btn btn-success">+ Добавить</button>
+        <div ng-controller="playerController as playerCtrl" class="modal fade in" ng-style="playerCtrl.style">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title">Добавьте игроков</h4>
+                    </div>
+                    <div class="modal-body">
+                        <form class="form-horizontal" role="form">
+                            <div class="form-group" ng-repeat="player in playerCtrl.players">
+                                <label for="name{{$index}}" class="col-sm-4 control-label">Игрок {{$index+1}}</label>
+                                <div class="col-sm-4">
+                                    <input ng-model="player.name" type="text" class="form-control" id="name{{$index}}" placeholder="Имя игрока">
+                                </div>
+                                <div class="col-sm-4">
+                                    <button class="btn btn-danger" ng-click="playerCtrl.removePlayer($index)" ng-disabled="playerCtrl.players.length < 3">Удалить</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <div class="col-sm-4 col-sm-offset-4">
+                                    <button class="btn btn-link" ng-click="playerCtrl.addPlayer()">+ добавить игрока</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" ng-click="playerCtrl.savePlayers()">Сохранить</button>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.0/angular.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
-  </body>
+        <div ng-controller="winnerController as winnerCtrl" class="modal fade in" ng-style="winnerCtrl.style">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title">Регистрация победы</h4>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row">
+                            <div class="col-xs-12 text-center">
+                                <div class="page-header">
+                                    <h1><small>Общий счет:</small> {{winnerCtrl.step_score}}</h1>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-4 text-center" ng-repeat="card in winnerCtrl.cards">
+                                <p><b>{{card.name}}</b></p>
+                                <div class="btn-group btn-group-sm">
+                                    <button type="button" class="btn btn-default" ng-click="winnerCtrl.addCard($index)"><span class="glyphicon glyphicon-arrow-up"></span></button>
+                                    <button type="button" class="btn btn-default">{{card.count}}</button>
+                                    <button type="button" class="btn btn-default" ng-click="winnerCtrl.removeCard($index)" ng-disabled="winnerCtrl.card.count < 1"><span class="glyphicon glyphicon-arrow-down"></span></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" ng-click="winnerCtrl.hideForm()">Отменить</button>
+                        <button type="button" class="btn btn-success" ng-click="winnerCtrl.saveWinner()">Сохранить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.0/angular.min.js"></script>
+        <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+        <script>
+            (function(){
+
+                var GameService = function(){
+
+                    var players = [];
+                    var steps = [];
+                    var Game = {};
+
+                    Game.init = function(){
+                        Game.loadPlayers();
+                    };
+
+                    Game.loadPlayers = function(){
+                        if (localStorage.getItem('players') == null || JSON.parse(localStorage.getItem('players')).length < 2){
+                            Game.clearGame();
+                        }
+                        else {
+                            players = JSON.parse(localStorage.getItem('players'));
+                            if (localStorage.getItem('steps') == null){
+                                localStorage.setItem('steps', JSON.stringify([]));
+                            }
+                            steps = JSON.parse(localStorage.getItem('steps'));
+                        }
+                    };
+
+                    Game.getPlayers = function(){
+                        return angular.copy(players);
+                    };
+
+                    Game.addPlayer = function(name){
+                        players[players.length] = {name: name};
+                        localStorage.setItem('players', JSON.stringify(players));
+                    };
+
+                    Game.getPlayer = function(id){
+                        if (players[id]){
+                            return angular.copy(players[id]);
+                        }
+                        return null;
+                    };
+
+                    Game.addStep = function(winnerId, score){
+                        steps[steps.length] = {winnerId: winnerId, score: score};
+                        localStorage.setItem('steps', JSON.stringify(steps));
+                    };
+
+                    Game.removeLastWin = function(){
+                        var last_step = steps.pop();
+                        localStorage.setItem('steps', JSON.stringify(steps));
+                        return last_step;
+                    };
+
+                    Game.getPlayersScore = function(){
+                        var scores = [];
+                        for (var j = 0; j < players.length; j++){
+                            scores[j] = 0;
+                        }
+                        for (var i = 0; i < steps.length; i++){
+                            scores[steps[i].winnerId] += steps[i].score;
+                        }
+                        return scores;
+                    };
+
+                    Game.stepNum = function(){
+                        return steps.length;
+                    };
+
+                    Game.getSteps = function(){
+                        return angular.copy(steps);
+                    };
+
+                    Game.clearGame = function(){
+                        localStorage.clear();
+                        players = [];
+                        steps = [];
+                    };
+
+                    Game.init();
+
+                    return Game;
+                };
+
+                var scoreController = function($rootScope, Game){
+                    var self = this;
+                    this.players = [];
+                    this.steps = [];
+                    var scores = [];
+                    var step = 0;
+
+                    $rootScope.$on('playersBeSave', function(){
+                        self.updateInfos();
+                    });
+
+                    $rootScope.$on('addWin', function(){
+                        self.updateInfos();
+                    });
+
+                    this.addWinner = function(){
+                        $rootScope.$emit('showAddWinnerFrom');
+                    };
+
+                    this.removeLastWin = function(){
+                        Game.removeLastWin();
+                        this.updateInfos();
+                    };
+
+                    this.updateInfos = function(){
+                        this.players = Game.getPlayers();
+                        this.steps = Game.getSteps();
+                        this.step = Game.stepNum();
+                        this.scores = Game.getPlayersScore();
+                    };
+
+                    this.initFn = function(){
+                        this.updateInfos();
+                    };
+
+                    this.clearGame = function(){
+                        Game.clearGame();
+                        window.location.reload();
+                    };
+
+                    this.initFn();
+                };
+
+                var playerController = function($rootScope, Game){
+                    var self = this;
+                    this.style = {display: 'none'};
+                    this.players = [{name:''},{name:''}];
+
+                    this.initFn = function(){
+                        Game.loadPlayers();
+                        if (Game.getPlayers() == null || Game.getPlayers().length < 2){
+                            Game.clearGame();
+                            this.style.display = 'block';
+                        }
+                        else {
+                            $rootScope.$emit('playersBeSave');
+                        }
+                    };
+
+                    this.removePlayer = function(id){
+                        this.players.splice(id, 1);
+                    };
+
+                    this.addPlayer = function(){
+                        this.players[this.players.length] = {name:''};
+                    };
+
+                    this.savePlayers = function(){
+                        for (var i = 0; i < this.players.length; i++){
+                            Game.addPlayer(this.players[i].name);
+                        }
+                        this.style.display = 'none';
+                        $rootScope.$emit('playersBeSave');
+                    };
+
+                    this.initFn();
+                };
+
+                var winnerController = function($rootScope, Game){
+                    var self = this;
+                    this.user_id = 0;
+                    this.step_score = 0;
+                    this.style = {display: 'none'};
+                    this.cards = [
+                        {val: 1, count: 0, name: 1},
+                        {val: 2, count: 0, name: 2},
+                        {val: 3, count: 0, name: 3},
+                        {val: 4, count: 0, name: 4},
+                        {val: 5, count: 0, name: 5},
+                        {val: 6, count: 0, name: 6},
+                        {val: 7, count: 0, name: 7},
+                        {val: 8, count: 0, name: 8},
+                        {val: 9, count: 0, name: 9},
+                        {val: 20, count: 0, name: '20'},
+                        {val: 40, count: 0, name: '40'}
+                    ];
+
+                    $rootScope.$on('showAddWinnerFrom', function(){
+                        self.showForm();
+                    });
+
+                    this.showForm = function(){
+                        this.style.display = 'block';
+                    };
+
+                    this.hideForm = function(){
+                        this.style.display = 'none';
+                    };
+
+                    this.addCard = function(id){
+                        this.cards[id].count++;
+                        this.updateScore();
+                    };
+
+                    this.removeCard = function(id){
+                        this.cards[id].count--;
+                        this.updateScore();
+                    };
+
+                    this.updateScore = function(){
+                        var score = 0;
+                        for (var i = 0; i < this.cards.length; i++){
+                            score += this.cards[i].val*this.cards[i].count;
+                        }
+                        this.step_score = score;
+                    };
+
+                    this.saveWinner = function(){
+                        Game.addStep(this.user_id, this.step_score);
+                        $rootScope.$emit('addWin');
+                        this.hideForm();
+                    };
+                };
+
+                angular
+                        .module('counterModule', [])
+                        .factory('Game', [GameService])
+                        .controller('scoreController', ['$rootScope', 'Game', scoreController])
+                        .controller('playerController', ['$rootScope', 'Game', playerController])
+                        .controller('winnerController', ['$rootScope', 'Game', winnerController]);
+            })();
+
+            var counterApp = angular.module('counterApp', ['counterModule']);
+
+        </script>
+    </body>
 </html>
